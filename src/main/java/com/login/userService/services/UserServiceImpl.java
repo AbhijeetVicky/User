@@ -1,5 +1,9 @@
 package com.login.userService.services;
 
+import com.login.userService.exceptions.DuplicateEmailException;
+import com.login.userService.exceptions.InvalidCredentialsException;
+import com.login.userService.exceptions.InvalidTokenException;
+import com.login.userService.exceptions.UserNotFoundException;
 import com.login.userService.models.Token;
 import com.login.userService.models.User;
 import com.login.userService.repositories.TokenRepository;
@@ -32,14 +36,15 @@ public class UserServiceImpl implements UserService{
     @Override
     public Token login(String email, String password) {
         Optional<User> userOptional  = userRepository.findByEmail(email);
+        // 1. Case: User not found
         if(userOptional.isEmpty()){
-            // throw exception or redirect user to sign up
+            throw new UserNotFoundException("User with email " + email + " not found.");
         }
 
         User user = userOptional.get();
+        // 2. Case: Invalid credentials (password does not match)
         if(!bCryptPasswordEncoder.matches(password,user.getHashedPassword())){
-            //throw anexception
-            return null;
+            throw new InvalidCredentialsException("Invalid password for user ");
         }
 
         Token token = createToken(user);
@@ -48,10 +53,11 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User signUp(String name, String email, String password) {
+    public User signUp(String name, String email, String password) throws DuplicateEmailException {
             Optional<User> userOptinal = userRepository.findByEmail(email);
+
             if(userOptinal.isPresent()){
-                //Throws an exception or redirect user to login
+                throw new DuplicateEmailException("Email is already registered.");
             }
             User user  = new User();
             user.setName(name);
@@ -65,29 +71,50 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User validateToken(String token) {
+    public User validateToken(String token) throws InvalidTokenException {
         Optional<Token> optionalToken = tokenRepository
                 .findByValueAndDeletedAndExpiryAtGreaterThan(token,false, new Date());
 
-
-        if(optionalToken.isEmpty()){
-            //throw an exception or invalid null
-            return null;
+        // 1. Case: Token is deleted
+        if (optionalToken.isPresent() && optionalToken.get().getDeleted()) {
+            throw new InvalidTokenException("Token is deleted. Please log in again.");
         }
 
-         return optionalToken.get().getUser();
+        // 2. Case: Token not found or invalid
+        if (optionalToken.isEmpty()) {
+            throw new InvalidTokenException("Invalid token.");
+        }
+
+        // 3. Case: Token has expired
+        Token tokenEntity = optionalToken.get();
+        if (tokenEntity.getExpiryAt().before(new Date())) {
+            throw new InvalidTokenException("Token has expired.");
+        }
+
+
+        return optionalToken.get().getUser();
     }
 
     @Override
-    public void logout(String token) {
+    public void logout(String tokenValue) {
         //H.W
+        Optional<Token> optionalToken = tokenRepository.findByValueAndDeleted(tokenValue, false);
+
+        if (optionalToken.isEmpty()) {
+            //Throw some exception
+        }
+
+        Token token = optionalToken.get();
+
+        token.setDeleted(true);
+        tokenRepository.save(token);
     }
 
     public Token createToken(User user) {
         Token token = new Token();
         token.setUser(user);
         //RandomStringUtils.randomAlphanumeric(120) - these are came from Apache Commons lang
-        token.setValue( RandomStringUtils.randomAlphanumeric(120));
+        token.setValue( RandomStringUtils.randomAlphanumeric(120)); // Read about UUID
 
         Date currentDate = new Date();
         Calendar calendar = Calendar.getInstance();

@@ -8,6 +8,9 @@ import lombok.Setter;
 public class LogoutRequestDto {
     private String token;
 
+
+
+
     public String getToken() {
         return token;
     }
