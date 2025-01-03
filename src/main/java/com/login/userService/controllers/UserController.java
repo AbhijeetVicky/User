@@ -1,5 +1,6 @@
 package com.login.userService.controllers;
 
+
 import com.login.userService.dto.*;
 import com.login.userService.dto.ResponseStatus;
 import com.login.userService.exceptions.DuplicateEmailException;
@@ -17,7 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserController {
     private UserService userService;
 
-    public UserController(UserService userService){
+
+    public UserController(UserService userService ){
         this.userService=userService;
     }
 
@@ -36,7 +38,9 @@ public class UserController {
                 User user = userService.signUp(
                 requestDto.getName(),
                 requestDto.getEmail(),
-                requestDto.getPassword()
+                requestDto.getPassword(),
+                        requestDto.getRole()
+
         );
 
         SignUpResponseDto responseDto = new SignUpResponseDto();
@@ -59,4 +63,6 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.OK);
 
     }
+
+
 }

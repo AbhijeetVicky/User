@@ -1,6 +1,7 @@
 package com.login.userService.models;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToMany;
@@ -14,16 +15,17 @@ import java.util.List;
 @Entity(name = "users")
 @JsonDeserialize
 public class User extends BaseModel{
+
     private String name;
     private String email;
     private String hashedPassword;
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER,cascade = CascadeType.PERSIST)
     private List<Role> roles;
+
 
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }

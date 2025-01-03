@@ -4,6 +4,7 @@ import com.login.userService.exceptions.DuplicateEmailException;
 import com.login.userService.exceptions.InvalidCredentialsException;
 import com.login.userService.exceptions.InvalidTokenException;
 import com.login.userService.exceptions.UserNotFoundException;
+import com.login.userService.models.Role;
 import com.login.userService.models.Token;
 import com.login.userService.models.User;
 import com.login.userService.repositories.TokenRepository;
@@ -12,9 +13,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService{
@@ -53,7 +52,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public User signUp(String name, String email, String password) throws DuplicateEmailException {
+    public User signUp(String name, String email, String password,List<Role> role) throws DuplicateEmailException {
             Optional<User> userOptinal = userRepository.findByEmail(email);
 
             if(userOptinal.isPresent()){
@@ -64,6 +63,7 @@ public class UserServiceImpl implements UserService{
             user.setEmail(email);
             user.setHashedPassword(bCryptPasswordEncoder.encode(password));
 
+            user.setRoles(role);
 
             userRepository.save(user);
             return user;
